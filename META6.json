@@ -1,0 +1,21 @@
+{
+    "name": "LeftistHeap",
+    "description": "Package with Leftist Heap data structure implementation.",
+    "version": "0.0.1",
+    "authors": [
+        "Anton Antonov"
+    ],
+    "auth": "zef:antononcube",
+    "build-depends": [],
+    "provides": {
+        "LeftistHeap": "lib/LeftistHeap.rakumod"
+    },
+    "license": "Artistic-2.0",
+    "tags": [
+        "heap",
+        "leftist",
+        "leftist heap"
+    ],
+    "api": "0",
+    "source-url": "https://github.com/antononcube/Raku-LeftistHeap.git"
+}
