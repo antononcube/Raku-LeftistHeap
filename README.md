@@ -2,6 +2,26 @@
 
 Raku package with Leftist Heap data structure implementation.
 
+----
+
+## Installation
+
+From Zef ecosystem:
+
+```
+zef install LeftistHeap
+```
+
+From GitHub:
+
+```
+zef install [LeftistHeap](https://github.com/antononcube/Raku-LeftistHeap.git)
+```
+
+----
+
+## Basic usage
+
 `LeftistHeap` is a mutable, mergeable priority queue. It is a min-heap by
 default and accepts a comparator for other orderings or user-defined objects.
 
@@ -29,7 +49,7 @@ my @values = 7, 2, 9, 1;
 my $heap = LeftistHeap.new(@values);
 ```
 ```
-# LeftistHeap.new(comparator => -> $a, $b { #`(Block|3898099990408) ... }, root => HeapNode.new(value => 1, left => HeapNode.new(value => 2, left => HeapNode.new(value => 7, left => HeapNode, right => HeapNode, rank => 1, elems => 1, depth => 1), right => HeapNode.new(value => 9, left => HeapNode, right => HeapNode, rank => 1, elems => 1, depth => 1), rank => 2, elems => 3, depth => 2), right => HeapNode, rank => 1, elems => 4, depth => 3))
+# LeftistHeap(size => 4, depth => 3, top => 1)
 ```
 
 A comparator can return an `Order`, a negative/zero/positive number, or a
@@ -37,12 +57,16 @@ A comparator can return an `Order`, a negative/zero/positive number, or a
 
 ```raku
 my $max-heap = LeftistHeap.new(
-    comparator => -> $a, $b { $a > $b },
+    comparator => { $^a > $^b },
 );
 ```
 ```
-# LeftistHeap.new(comparator => -> $a, $b { #`(Block|3898099990912) ... }, root => HeapNode)
+# LeftistHeap(size => 0, depth => 0, top => Nil)
 ```
+
+----
+
+## Methods
 
 - `insert` and `merge` mutate and return the receiving heap. 
 - `merge` leaves its argument usable, and `clone` returns an independent copy. 
@@ -51,22 +75,27 @@ my $max-heap = LeftistHeap.new(
 - `traverse` visits `HeapNode` objects without recursion. 
   - Its `order` can be "preorder" (the default), "inorder", or "postorder". 
 - `values` returns an array of all stored values and accepts the same `order` option. 
-- `eqv` compares two
-heaps by their priority-ordered values without changing either heap.
+- `eqv` compares two heaps by their priority-ordered values without changing either heap.
  
+----
+
+## Benchmarks
+
+A few benchmark scripts are placed in the directory ["./benchmarks"](./benchmarks).
+
 Benchmark scripts accept an optional element count:
 
 ```shell
-raku benchmarks/insert-delete.raku 65536
+raku benchmarks/insert-delete.raku 32768
 raku benchmarks/merge.raku 65536
 ```
 ```
-# elements: 65536
-# insert:   3.983 s
-# delete:   7.464 s
-# combined: 11.448 s
-# 1st heap creation time: 2.897270, elems: 65536
-# 2nd heap creation time: 1.878763, elems: 65536
-# merge: 0.000184 s
+# elements: 32768
+# insert:   1.730 s
+# delete:   3.456 s
+# combined: 5.186 s
+# 1st heap creation time: 2.803343, elems: 65536
+# 2nd heap creation time: 1.879010, elems: 65536
+# merge: 0.000176 s
 # elements after merge: 131072
 ```

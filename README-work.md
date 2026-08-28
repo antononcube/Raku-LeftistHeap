@@ -2,6 +2,26 @@
 
 Raku package with Leftist Heap data structure implementation.
 
+----
+
+## Installation
+
+From Zef ecosystem:
+
+```
+zef install LeftistHeap
+```
+
+From GitHub:
+
+```
+zef install [LeftistHeap](https://github.com/antononcube/Raku-LeftistHeap.git)
+```
+
+----
+
+## Basic usage
+
 `LeftistHeap` is a mutable, mergeable priority queue. It is a min-heap by
 default and accepts a comparator for other orderings or user-defined objects.
 
@@ -29,9 +49,13 @@ A comparator can return an `Order`, a negative/zero/positive number, or a
 
 ```raku
 my $max-heap = LeftistHeap.new(
-    comparator => -> $a, $b { $a > $b },
+    comparator => { $^a > $^b },
 );
 ```
+
+----
+
+## Methods
 
 - `insert` and `merge` mutate and return the receiving heap. 
 - `merge` leaves its argument usable, and `clone` returns an independent copy. 
@@ -40,12 +64,17 @@ my $max-heap = LeftistHeap.new(
 - `traverse` visits `HeapNode` objects without recursion. 
   - Its `order` can be "preorder" (the default), "inorder", or "postorder". 
 - `values` returns an array of all stored values and accepts the same `order` option. 
-- `eqv` compares two
-heaps by their priority-ordered values without changing either heap.
+- `eqv` compares two heaps by their priority-ordered values without changing either heap.
  
+----
+
+## Benchmarks
+
+A few benchmark scripts are placed in the directory ["./benchmarks"](./benchmarks).
+
 Benchmark scripts accept an optional element count:
 
 ```shell
-raku benchmarks/insert-delete.raku 65536
+raku benchmarks/insert-delete.raku 32768
 raku benchmarks/merge.raku 65536
 ```
