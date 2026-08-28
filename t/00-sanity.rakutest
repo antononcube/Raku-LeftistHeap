@@ -1,0 +1,95 @@
+use v6.d;
+use Test;
+use lib 'lib';
+use LeftistHeap;
+
+subtest 'empty heap' => {
+    my $heap = LeftistHeap.new;
+
+    isa-ok $heap, LeftistHeap;
+    ok $heap.is-empty, 'a new heap is empty';
+    is $heap.elems, 0, 'an empty heap has no elements';
+    is $heap.depth, 0, 'an empty heap has zero depth';
+    nok $heap.lookup.defined, 'lookup on an empty heap returns Nil';
+    nok $heap.delete-top-element.defined,
+        'deleting from an empty heap returns Nil';
+};
+
+subtest 'insertion and deletion' => {
+    my $heap = LeftistHeap.new;
+
+    is $heap.insert(7), $heap, 'insert is chainable';
+    $heap.insert($_) for 3, 9, 1, 4, 1;
+
+    is $heap.lookup, 1, 'lookup returns the least element';
+    is $heap.elems, 6, 'duplicates count as separate elements';
+    ok $heap.depth > 0, 'a nonempty heap has positive depth';
+
+    my @ordered;
+    @ordered.push($heap.delete-top-element) until $heap.is-empty;
+    is-deeply @ordered, [1, 1, 3, 4, 7, 9],
+        'successive deletions are priority ordered';
+    is $heap.elems, 0, 'deletion updates the element count';
+};
+
+subtest 'merge' => {
+    my $odd  = LeftistHeap.new;
+    my $even = LeftistHeap.new;
+    $odd.insert($_)  for 9, 3, 7, 1, 5;
+    $even.insert($_) for 8, 2, 6, 4;
+
+    is $odd.merge($even), $odd, 'merge is chainable';
+    is $odd.elems, 9, 'merge combines the element counts';
+    is $odd.lookup, 1, 'merge preserves the heap ordering';
+    is $even.elems, 4, 'merge does not consume the other heap';
+
+    my @ordered;
+    @ordered.push($odd.delete-top-element) until $odd.is-empty;
+    is-deeply @ordered, [1..9], 'all merged values can be removed in order';
+};
+
+subtest 'custom comparator and arbitrary objects' => {
+    class Job {
+        has Str $.name;
+        has Int $.priority;
+    }
+
+    my $heap = LeftistHeap.new(
+        comparator => -> Job $a, Job $b { $a.priority > $b.priority },
+    );
+    $heap.insert(Job.new(name => 'minor',  priority => 1));
+    $heap.insert(Job.new(name => 'urgent', priority => 10));
+    $heap.insert(Job.new(name => 'normal', priority => 5));
+
+    is $heap.lookup.name, 'urgent', 'a Bool comparator controls priority';
+    is $heap.delete-top-element.priority, 10,
+        'delete returns the whole stored object';
+
+    my $numeric-comparator = LeftistHeap.new(
+        comparator => -> $a, $b { $b <=> $a },
+    );
+    $numeric-comparator.insert($_) for 2, 8, 4;
+    is $numeric-comparator.lookup, 8,
+        'numeric three-way comparators are supported';
+};
+
+subtest 'HeapNode metadata obeys the leftist invariant' => {
+    my $heap = LeftistHeap.new;
+    $heap.insert($_) for ^100;
+
+    isa-ok $heap.root, HeapNode, 'LeftistHeap stores HeapNode instances';
+
+    sub check-node(HeapNode $node --> Bool:D) {
+        my $left-rank  = $node.left  ?? $node.left.rank  !! 0;
+        my $right-rank = $node.right ?? $node.right.rank !! 0;
+        $left-rank >= $right-rank
+            && (!$node.left  || check-node($node.left))
+            && (!$node.right || check-node($node.right))
+    }
+
+    ok check-node($heap.root), 'every node satisfies the leftist invariant';
+    is $heap.root.elems, $heap.elems, 'root metadata tracks heap size';
+    is $heap.root.depth, $heap.depth, 'root metadata tracks heap depth';
+};
+
+done-testing;
