@@ -15,6 +15,31 @@ subtest 'empty heap' => {
         'deleting from an empty heap returns Nil';
 };
 
+subtest 'construction from values' => {
+    my @values = 17, 3, 11, 9, 1, 15, 7, 5, 13, 19, 2, 8, 6, 4;
+    my $heap = LeftistHeap.new(@values);
+
+    is $heap.elems, @values.elems, 'the constructor inserts every value';
+    is $heap.lookup, 1, 'the constructor establishes heap order';
+    is-deeply @values, [17, 3, 11, 9, 1, 15, 7, 5, 13, 19, 2, 8, 6, 4],
+        'construction does not modify the input array';
+
+    my @ordered;
+    @ordered.push($heap.delete-top-element) until $heap.is-empty;
+    is-deeply @ordered, @values.sort.Array,
+        'all constructed values are removed in order';
+
+    my $max-heap = LeftistHeap.new(
+        @values,
+        comparator => -> $a, $b { $a > $b },
+    );
+    is $max-heap.lookup, 19, 'the constructor accepts a comparator';
+
+    my $small = LeftistHeap.new(4, 2, 3);
+    is $small.lookup, 2, 'small inputs are also heapified';
+    is $LeftistHeap::MINRECSIZE, 5, 'the recursion threshold is exposed';
+};
+
 subtest 'insertion and deletion' => {
     my $heap = LeftistHeap.new;
 
@@ -46,6 +71,113 @@ subtest 'merge' => {
     my @ordered;
     @ordered.push($odd.delete-top-element) until $odd.is-empty;
     is-deeply @ordered, [1..9], 'all merged values can be removed in order';
+};
+
+subtest 'traverse' => {
+    my $left = HeapNode.new(value => 1);
+    my $right = HeapNode.new(value => 3);
+    my $root = HeapNode.new(value => 2, :$left, :$right);
+    my $heap = LeftistHeap.bless(:$root);
+
+    my @preorder;
+    is $heap.traverse(-> $node { @preorder.push($node.value) }), $heap,
+        'traverse is chainable';
+    is-deeply @preorder, [2, 1, 3], 'preorder is the default';
+
+    my @inorder;
+    $heap.traverse(
+        -> $node { @inorder.push($node.value) },
+        order => 'inorder',
+    );
+    is-deeply @inorder, [1, 2, 3], 'inorder traversal is supported';
+
+    my @postorder;
+    $heap.traverse(
+        -> $node { @postorder.push($node.value) },
+        order => 'postorder',
+    );
+    is-deeply @postorder, [1, 3, 2], 'postorder traversal is supported';
+
+    my $visits = 0;
+    LeftistHeap.new.traverse(-> $node { $visits++ });
+    is $visits, 0, 'an empty heap has no nodes to visit';
+    throws-like { $heap.traverse(-> $node {}, order => 'sideways') },
+        X::AdHoc, 'an unknown traversal order is rejected';
+};
+
+subtest 'values' => {
+    my $left = HeapNode.new(value => 'left');
+    my $right = HeapNode.new(value => 'right');
+    my $root = HeapNode.new(value => 'root', :$left, :$right);
+    my $heap = LeftistHeap.bless(:$root);
+
+    isa-ok $heap.values, Array, 'values returns an Array';
+    is-deeply $heap.values, [<root left right>],
+        'values uses preorder by default';
+    is-deeply $heap.values(order => 'inorder'), [<left root right>],
+        'values accepts a traversal order';
+    is-deeply $heap.values(order => 'postorder'), [<left right root>],
+        'values supports postorder';
+
+    is-deeply LeftistHeap.new.values, [],
+        'an empty heap returns an empty Array';
+
+    my $duplicates = LeftistHeap.new(3, 1, 3, 2);
+    is-deeply $duplicates.values.sort.Array, [1, 2, 3, 3],
+        'every value, including duplicates, is returned';
+    is $duplicates.elems, 4, 'reading values does not modify the heap';
+};
+
+subtest 'clone' => {
+    my $comparator = -> $a, $b { $a > $b };
+    my $original = LeftistHeap.new(:$comparator);
+    $original.insert($_) for 2, 8, 4, 6;
+
+    my $copy = $original.clone;
+
+    isa-ok $copy, LeftistHeap, 'clone returns a LeftistHeap';
+    nok ($copy =:= $original), 'clone is a distinct heap';
+    nok ($copy.root =:= $original.root), 'the node structure is copied';
+    ok ($copy.comparator =:= $original.comparator),
+        'the comparator is preserved';
+    is $copy.elems, 4, 'all elements are copied';
+    is $copy.lookup, 8, 'the copied heap preserves its ordering';
+
+    is $copy.delete-top-element, 8, 'the clone can be changed';
+    $copy.insert(10);
+    is $original.lookup, 8, 'changing the clone does not change the original';
+    is $original.elems, 4, 'the original element count is unchanged';
+
+    $original.insert(12);
+    is $copy.lookup, 10, 'changing the original does not change the clone';
+
+    my $empty-copy = LeftistHeap.new.clone;
+    ok $empty-copy.is-empty, 'an empty heap can be cloned';
+};
+
+subtest 'equivalence' => {
+    my $first = LeftistHeap.new(7, 1, 5, 3, 3, 9);
+    my $second = LeftistHeap.new(3, 9, 3, 5, 1, 7);
+
+    ok $first.eqv($second),
+        'heaps with the same priority sequence are equivalent';
+    is $first.elems, 6, 'comparison does not modify the receiver';
+    is $second.elems, 6, 'comparison does not modify the other heap';
+
+    $second.delete-top-element;
+    nok $first.eqv($second), 'different element counts are not equivalent';
+    $second.insert(2);
+    nok $first.eqv($second), 'different values are not equivalent';
+
+    ok LeftistHeap.new.eqv(LeftistHeap.new), 'empty heaps are equivalent';
+    nok $first.eqv(42), 'a non-heap object is not equivalent';
+
+    my $maximum-first = LeftistHeap.new(
+        1, 2, 3,
+        comparator => -> $a, $b { $a > $b },
+    );
+    nok $first.eqv($maximum-first),
+        'heaps with different observable priority sequences are not equivalent';
 };
 
 subtest 'custom comparator and arbitrary objects' => {
