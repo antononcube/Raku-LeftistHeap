@@ -241,4 +241,16 @@ class LeftistHeap {
     method depth(--> Int:D) {
         $!root ?? $!root.depth !! 0
     }
+
+
+    #======================================================
+    # Representation
+    #======================================================
+    multi method gist(::?CLASS:D:-->Str) {
+        return "LeftistHeap(size => {self.elems}, depth => {self.depth}, top => {self.lookup ?? self.lookup !! 'Nil'})";
+    }
+
+    method Str(){
+        return self.gist();
+    }
 }
