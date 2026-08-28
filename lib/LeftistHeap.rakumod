@@ -43,7 +43,6 @@ class LeftistHeap {
     # Construct a heap with zero or more values
     proto method new(|) {*}
     multi method new(
-        ::?CLASS:U:
         *@values,
         :&comparator = -> Mu $a, Mu $b { $a cmp $b }
         --> LeftistHeap:D
