@@ -3,8 +3,8 @@ use v6.d;
 
 use LeftistHeap;
 
-my Int $size = (@*ARGS[0] // 100_000).Int;
-my @values = (^$size).pick(*);
+my Int $size = (@*ARGS[0] // 2 ** 16).Int;
+my @values = (^$size).roll($size);
 
 my $started = now;
 my $heap = LeftistHeap.new;

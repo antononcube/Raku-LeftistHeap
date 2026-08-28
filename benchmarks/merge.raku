@@ -3,7 +3,7 @@ use v6.d;
 
 use LeftistHeap;
 
-my Int $size = (@*ARGS[0] // 100_000).Int;
+my Int $size = (@*ARGS[0] // 2 ** 16).Int;
 my $left  = LeftistHeap.new;
 my $right = LeftistHeap.new;
 $left.insert($_)  for 0, 2 ...^ $size;
