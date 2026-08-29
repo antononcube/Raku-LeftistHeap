@@ -1,0 +1,41 @@
+use v6.d;
+use Test;
+
+use LeftistHeap;
+
+plan *;
+
+subtest 'lookup' => {
+    my $heap = LeftistHeap.new(7, 3, 9, 1, 4, 6, 8);
+
+    ok $heap.lookup(HeapNode.new(value => 1)),
+        'lookup finds the top value';
+    ok $heap.lookup(HeapNode.new(value => 6)),
+        'lookup finds a value below the root';
+    nok $heap.lookup(HeapNode.new(value => 5)),
+        'lookup rejects a missing value';
+    nok LeftistHeap.new.lookup(HeapNode.new(value => 1)),
+        'lookup returns False for an empty heap';
+    is $heap.elems, 7, 'lookup does not modify the heap';
+
+    my $comparisons = 0;
+    my $counted = LeftistHeap.new(
+        2, 4, 6, 8,
+        comparator => -> $a, $b { $comparisons++; $a <=> $b },
+    );
+    $comparisons = 0;
+    nok $counted.lookup(HeapNode.new(value => 1)),
+        'a higher-priority missing value is rejected';
+    is $comparisons, 1, 'lookup prunes the subtree at its root';
+
+    my $max-heap = LeftistHeap.new(
+        2, 4, 6, 8,
+        comparator => -> $a, $b { $a >= $b },
+    );
+    ok $max-heap.lookup(HeapNode.new(value => 4)),
+        'lookup supports non-strict Bool comparators';
+    nok $max-heap.lookup(HeapNode.new(value => 9)),
+        'pruning follows a reversed heap order';
+};
+
+done-testing;

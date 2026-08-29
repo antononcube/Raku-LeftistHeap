@@ -1,7 +1,9 @@
 use v6.d;
 use Test;
-use lib 'lib';
+
 use LeftistHeap;
+
+plan *;
 
 subtest 'empty heap' => {
     my $heap = LeftistHeap.new;
@@ -10,7 +12,7 @@ subtest 'empty heap' => {
     ok $heap.is-empty, 'a new heap is empty';
     is $heap.elems, 0, 'an empty heap has no elements';
     is $heap.depth, 0, 'an empty heap has zero depth';
-    nok $heap.lookup.defined, 'lookup on an empty heap returns Nil';
+    nok $heap.top.defined, 'top on an empty heap returns Nil';
     nok $heap.delete-top-element.defined,
         'deleting from an empty heap returns Nil';
 };
@@ -20,7 +22,7 @@ subtest 'construction from values' => {
     my $heap = LeftistHeap.new(@values);
 
     is $heap.elems, @values.elems, 'the constructor inserts every value';
-    is $heap.lookup, 1, 'the constructor establishes heap order';
+    is $heap.top, 1, 'the constructor establishes heap order';
     is-deeply @values, [17, 3, 11, 9, 1, 15, 7, 5, 13, 19, 2, 8, 6, 4],
         'construction does not modify the input array';
 
@@ -33,10 +35,10 @@ subtest 'construction from values' => {
         @values,
         comparator => -> $a, $b { $a > $b },
     );
-    is $max-heap.lookup, 19, 'the constructor accepts a comparator';
+    is $max-heap.top, 19, 'the constructor accepts a comparator';
 
     my $small = LeftistHeap.new(4, 2, 3);
-    is $small.lookup, 2, 'small inputs are also heapified';
+    is $small.top, 2, 'small inputs are also heapified';
     is $LeftistHeap::MINRECSIZE, 5, 'the recursion threshold is exposed';
 };
 
@@ -46,7 +48,7 @@ subtest 'insertion and deletion' => {
     is $heap.insert(7), $heap, 'insert is chainable';
     $heap.insert($_) for 3, 9, 1, 4, 1;
 
-    is $heap.lookup, 1, 'lookup returns the least element';
+    is $heap.top, 1, 'top returns the least element';
     is $heap.elems, 6, 'duplicates count as separate elements';
     ok $heap.depth > 0, 'a nonempty heap has positive depth';
 
@@ -65,7 +67,7 @@ subtest 'merge' => {
 
     is $odd.merge($even), $odd, 'merge is chainable';
     is $odd.elems, 9, 'merge combines the element counts';
-    is $odd.lookup, 1, 'merge preserves the heap ordering';
+    is $odd.top, 1, 'merge preserves the heap ordering';
     is $even.elems, 4, 'merge does not consume the other heap';
 
     my @ordered;
@@ -141,15 +143,15 @@ subtest 'clone' => {
     ok ($copy.comparator =:= $original.comparator),
         'the comparator is preserved';
     is $copy.elems, 4, 'all elements are copied';
-    is $copy.lookup, 8, 'the copied heap preserves its ordering';
+    is $copy.top, 8, 'the copied heap preserves its ordering';
 
     is $copy.delete-top-element, 8, 'the clone can be changed';
     $copy.insert(10);
-    is $original.lookup, 8, 'changing the clone does not change the original';
+    is $original.top, 8, 'changing the clone does not change the original';
     is $original.elems, 4, 'the original element count is unchanged';
 
     $original.insert(12);
-    is $copy.lookup, 10, 'changing the original does not change the clone';
+    is $copy.top, 10, 'changing the original does not change the clone';
 
     my $empty-copy = LeftistHeap.new.clone;
     ok $empty-copy.is-empty, 'an empty heap can be cloned';
@@ -193,7 +195,7 @@ subtest 'custom comparator and arbitrary objects' => {
     $heap.insert(Job.new(name => 'urgent', priority => 10));
     $heap.insert(Job.new(name => 'normal', priority => 5));
 
-    is $heap.lookup.name, 'urgent', 'a Bool comparator controls priority';
+    is $heap.top.name, 'urgent', 'a Bool comparator controls priority';
     is $heap.delete-top-element.priority, 10,
         'delete returns the whole stored object';
 
@@ -201,7 +203,7 @@ subtest 'custom comparator and arbitrary objects' => {
         comparator => -> $a, $b { $b <=> $a },
     );
     $numeric-comparator.insert($_) for 2, 8, 4;
-    is $numeric-comparator.lookup, 8,
+    is $numeric-comparator.top, 8,
         'numeric three-way comparators are supported';
 };
 
