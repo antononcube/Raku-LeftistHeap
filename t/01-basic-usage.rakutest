@@ -24,22 +24,33 @@ subtest 'construction from values' => {
     is $heap.elems, @values.elems, 'the constructor inserts every value';
     is $heap.top, 1, 'the constructor establishes heap order';
     is-deeply @values, [17, 3, 11, 9, 1, 15, 7, 5, 13, 19, 2, 8, 6, 4],
-        'construction does not modify the input array';
+            'construction does not modify the input array';
 
     my @ordered;
     @ordered.push($heap.delete-top-element) until $heap.is-empty;
     is-deeply @ordered, @values.sort.Array,
-        'all constructed values are removed in order';
+            'all constructed values are removed in order';
 
     my $max-heap = LeftistHeap.new(
-        @values,
-        comparator => -> $a, $b { $a > $b },
-    );
+            @values,
+            comparator => -> $a, $b {
+                $a > $b
+            },
+            );
     is $max-heap.top, 19, 'the constructor accepts a comparator';
 
     my $small = LeftistHeap.new(4, 2, 3);
     is $small.top, 2, 'small inputs are also heapified';
     is $LeftistHeap::MINRECSIZE, 5, 'the recursion threshold is exposed';
+};
+
+subtest 'comparator variants' => {
+    my @values = 17, 3, 11, 9, 1, 15, 7, 5, 13, 19, 2, 8, 6, 4;
+
+    my $heap1 = LeftistHeap.new(@values);
+    my $heap2 = LeftistHeap.new(@values, comparator => { $^a <=> $^b });
+
+    is $heap2.top, $heap1.top, 'same top element';
 };
 
 subtest 'insertion and deletion' => {
@@ -131,7 +142,7 @@ subtest 'values' => {
 };
 
 subtest 'clone' => {
-    my $comparator = -> $a, $b { $a > $b };
+    my $comparator = { $^a > $^b };
     my $original = LeftistHeap.new(:$comparator);
     $original.insert($_) for 2, 8, 4, 6;
 
