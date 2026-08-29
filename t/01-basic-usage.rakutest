@@ -44,6 +44,15 @@ subtest 'construction from values' => {
     is $LeftistHeap::MINRECSIZE, 5, 'the recursion threshold is exposed';
 };
 
+subtest 'construction from array values' => {
+    my @values = 17, 3, 11, 9, 1, 15, 7, 5, 13, 19, 2, 8, 6, 4;
+    @values = (('a' .. 'z').head(@values.elems) Z @values)>>.Array;
+
+    my $heap = LeftistHeap.new(@values, comparator => { $^a.tail <=> $^b.tail });
+
+    is-deeply $heap.top, ['e', 1], 'top element has tail 1';
+};
+
 subtest 'comparator variants' => {
     my @values = 17, 3, 11, 9, 1, 15, 7, 5, 13, 19, 2, 8, 6, 4;
 
