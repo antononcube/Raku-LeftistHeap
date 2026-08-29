@@ -137,14 +137,14 @@ class LeftistHeap {
     }
 
     # Delete/pop top element
-    method pop(){ self.delete-top-element }
+    method pop() { self.delete-top-element }
 
     method delete-top-element() {
         return Nil unless $!root;
 
         my $value = $!root.value;
         $!root = self!merge-nodes($!root.left, $!root.right);
-        $value
+        return $value;
     }
 
     method merge(LeftistHeap:D $other --> LeftistHeap:D) {
