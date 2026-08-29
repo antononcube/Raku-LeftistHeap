@@ -45,10 +45,13 @@ subtest 'construction from values' => {
 };
 
 subtest 'construction from array values' => {
+    # How LeftistHeap is used the package "Graph".
+
     my @values = 17, 3, 11, 9, 1, 15, 7, 5, 13, 19, 2, 8, 6, 4;
     @values = (('a' .. 'z').head(@values.elems) Z @values)>>.Array;
 
-    my $heap = LeftistHeap.new(@values, comparator => { $^a.tail <=> $^b.tail });
+    my $heap = LeftistHeap.new(comparator => { $^a.tail <=> $^b.tail });
+    $heap.push(|@values);
 
     is-deeply $heap.top, ['e', 1], 'top element has tail 1';
 };
