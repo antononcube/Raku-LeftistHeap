@@ -31,12 +31,14 @@ use LeftistHeap;
 my $heap = LeftistHeap.new;
 $heap.insert($_) for 7, 2, 9, 1;
 
-say $heap.lookup;             # 1
+say $heap.top;                # 1
+say $heap.lookup(HeapNode.new(value => 9)); # True
 say $heap.delete-top-element; # 1
 say $heap.elems;              # 3
 ```
 ```
 # 1
+# True
 # 1
 # 3
 ```
@@ -70,7 +72,8 @@ my $max-heap = LeftistHeap.new(
 
 - `insert` and `merge` mutate and return the receiving heap. 
 - `merge` leaves its argument usable, and `clone` returns an independent copy. 
-- `lookup` and`delete-top-element` return `Nil` for an empty heap. 
+- `top` and `delete-top-element` return `Nil` for an empty heap.
+- `lookup(HeapNode)` uses the comparator to search for a matching value and returns a `Bool`.
 - `depth` is the maximum number of nodes on a root-to-leaf path.
 - `traverse` visits `HeapNode` objects without recursion. 
   - Its `order` can be "preorder" (the default), "inorder", or "postorder". 
@@ -91,11 +94,11 @@ raku benchmarks/merge.raku 65536
 ```
 ```
 # elements: 32768
-# insert:   1.730 s
-# delete:   3.456 s
-# combined: 5.186 s
-# 1st heap creation time: 2.803343, elems: 65536
-# 2nd heap creation time: 1.879010, elems: 65536
+# insert:   1.881 s
+# delete:   3.500 s
+# combined: 5.380 s
+# 1st heap creation time: 2.828085, elems: 65536
+# 2nd heap creation time: 1.905601, elems: 65536
 # merge: 0.000176 s
 # elements after merge: 131072
 ```
