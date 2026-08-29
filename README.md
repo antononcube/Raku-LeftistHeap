@@ -1,6 +1,6 @@
 # LeftistHeap
 
-Raku package with Leftist Heap data structure implementation.
+Raku package that implements the [Leftist Heap](https://en.wikipedia.org/wiki/Leftist_tree) data structure.
 
 ----
 
