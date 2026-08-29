@@ -70,6 +70,23 @@ class LeftistHeap {
         $result < 0
     }
 
+    method !compare-values(Mu $a, Mu $b --> Order:D) {
+        my $forward = $!comparator($a, $b);
+
+        if $forward ~~ Bool {
+            my $backward = $!comparator($b, $a);
+            die 'Comparator must consistently return Bool values.' unless $backward ~~ Bool;
+
+            # Both true accommodates non-strict comparators such as >=;
+            # both false accommodates strict comparators such as >.
+            return Same if $forward == $backward;
+            return $forward ?? Less !! More;
+        }
+
+        return $forward if $forward ~~ Order;
+        $forward <=> 0
+    }
+
     method !make-node(Mu $value, HeapNode $left, HeapNode $right --> HeapNode:D) {
         my $left-rank  = $left  ?? $left.rank  !! 0;
         my $right-rank = $right ?? $right.rank !! 0;
@@ -112,7 +129,7 @@ class LeftistHeap {
     }
 
     # Just the top element
-    method lookup() {
+    method top() {
         $!root ?? $!root.value !! Nil
     }
 
@@ -137,8 +154,8 @@ class LeftistHeap {
         Str:D :$order = 'preorder'
         --> LeftistHeap:D
     ) {
-        die "Unknown traversal order '$order'"
-            unless $order eq any(<preorder inorder postorder>);
+        die "Unknown traversal order '$order'."
+        unless $order eq any(<preorder inorder postorder>);
 
         my @pending;
         @pending.push: [$!root, False] if $!root;
@@ -171,6 +188,31 @@ class LeftistHeap {
         }
 
         self
+    }
+
+    method lookup(HeapNode:D $findMe --> Bool:D) {
+        my @pending;
+        @pending.push($!root) if $!root;
+
+        while @pending {
+            my HeapNode $node = @pending.pop;
+
+            given self!compare-values($findMe.value, $node.value) {
+                when Same {
+                    return True;
+                }
+                when More {
+                    # The target has lower priority than this node and can
+                    # therefore occur in either of its child heaps.
+                    @pending.push($node.right) if $node.right;
+                    @pending.push($node.left) if $node.left;
+                }
+                # A higher-priority target cannot occur below this node, so
+                # the whole subtree is discarded when the result is Less.
+            }
+        }
+
+        return False;
     }
 
     method values(Str:D :$order = 'preorder' --> Array:D) {
@@ -222,7 +264,7 @@ class LeftistHeap {
         my $right = $other.clone;
 
         until $left.is-empty {
-            return False unless $left.lookup eqv $right.lookup;
+            return False unless $left.top eqv $right.top;
             $left.delete-top-element;
             $right.delete-top-element;
         }
@@ -247,7 +289,7 @@ class LeftistHeap {
     # Representation
     #======================================================
     multi method gist(::?CLASS:D:-->Str) {
-        return "LeftistHeap(size => {self.elems}, depth => {self.depth}, top => {self.lookup ?? self.lookup !! 'Nil'})";
+        return "LeftistHeap(size => {self.elems}, depth => {self.depth}, top => {self.top ?? self.top !! 'Nil'})";
     }
 
     method Str(){
