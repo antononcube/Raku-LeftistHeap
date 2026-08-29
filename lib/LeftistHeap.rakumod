@@ -118,10 +118,13 @@ class LeftistHeap {
     }
 
     proto method push(|) {*}
-
-    multi method push(LeftistHeap:D: *@values is raw --> LeftistHeap:D) {
+    multi method push(LeftistHeap:D: **@values is raw --> LeftistHeap:D) {
         self.insert($_) for @values;
         return self;
+    }
+    multi method push(LeftistHeap:D: Slip \values --> LeftistHeap:D) {
+        self.insert($_) for values;
+        self;
     }
     multi method push(LeftistHeap:D: Mu $value --> LeftistHeap:D) {
         self.insert($value);
