@@ -65,6 +65,32 @@ subtest 'comparator variants' => {
     is $heap2.top, $heap1.top, 'same top element';
 };
 
+subtest 'comparator normalization' => {
+    my $classification-calls = 0;
+    my @values = reverse ^128;
+    my $heap = LeftistHeap.new(
+        @values,
+        comparator => -> $a, $b {
+            $classification-calls++ if $a == $b;
+            $a <=> $b
+        },
+    );
+
+    is $classification-calls, 1,
+        'bulk construction classifies the comparator only once';
+    is $heap.top, 0, 'the normalized comparator preserves ordering';
+
+    my $calls = 0;
+    my $empty = LeftistHeap.new(
+        comparator => -> $a, $b { $calls++; $a <=> $b },
+    );
+    is $calls, 0, 'an empty heap does not invoke its comparator';
+    $empty.insert(2);
+    is $calls, 0, 'the first insertion needs no comparison';
+    $empty.insert(1);
+    is $empty.top, 1, 'an empty heap normalizes lazily when needed';
+};
+
 subtest 'insertion and deletion' => {
     my $heap = LeftistHeap.new;
 

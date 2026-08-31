@@ -38,6 +38,8 @@ class LeftistHeap {
     our constant $MINRECSIZE = 5;
 
     has Callable $.comparator = -> Mu $a, Mu $b { $a cmp $b };
+    has Callable $!priority-test;
+    has Callable $!value-comparison;
     has HeapNode $.root;
 
     # Construct a heap with zero or more values
@@ -47,44 +49,89 @@ class LeftistHeap {
         :&comparator = -> Mu $a, Mu $b { $a cmp $b }
         --> LeftistHeap:D
     ) {
+        my $heap = self.bless(:&comparator);
+        return $heap unless @values;
+
+        # Comparator result-type detection is performed once. All recursive
+        # subheaps share the resulting specialized callables.
+        $heap!normalize-comparator(@values[0], @values[0]) if @values.elems > 1;
+        $heap!populate(@values)
+    }
+
+    method !populate(@values --> LeftistHeap:D) {
         my $middle = @values.elems div 2;
         my @left-values = @values.head($middle);
         my @right-values = @values.tail(@values.elems - $middle);
 
         if @left-values.elems > $MINRECSIZE && @right-values.elems > $MINRECSIZE {
-            my $left = self.new(|@left-values, :&comparator);
-            my $right = self.new(|@right-values, :&comparator);
-            return $left.merge($right);
+            my $left = self.WHAT.bless(
+                comparator => $!comparator,
+                priority-test => $!priority-test,
+                value-comparison => $!value-comparison,
+            );
+            my $right = self.WHAT.bless(
+                comparator => $!comparator,
+                priority-test => $!priority-test,
+                value-comparison => $!value-comparison,
+            );
+
+            $left!populate(@left-values);
+            $right!populate(@right-values);
+            $left.merge($right);
+            $!root = $left.root;
+            return self;
         }
 
-        my $heap = self.bless(:&comparator);
-        $heap.insert($_) for @values;
-        $heap
+        self.insert($_) for @values;
+        self
+    }
+
+    method !normalize-comparator(Mu $a, Mu $b --> Nil) {
+        return if $!priority-test.defined;
+
+        my &source = $!comparator;
+        my $result = &source($a, $b);
+
+        if $result ~~ Bool {
+
+            $!priority-test = -> Mu $x, Mu $y --> Bool:D { so &source($x, $y) }
+
+            $!value-comparison = -> Mu $x, Mu $y --> Order:D {
+                my Bool $forward = &source($x, $y);
+                my Bool $backward = &source($y, $x);
+
+                # Both true accommodates non-strict comparators such as >=;
+                # both false accommodates strict comparators such as >.
+                $forward == $backward
+                    ?? Same
+                    !! ($forward ?? Less !! More)
+            }
+
+        } elsif $result ~~ Order {
+
+            $!priority-test = -> Mu $x, Mu $y --> Bool:D { &source($x, $y) === Less }
+
+            $!value-comparison = -> Mu $x, Mu $y --> Order:D { &source($x, $y) }
+
+        } else {
+
+            $!priority-test = -> Mu $x, Mu $y --> Bool:D { &source($x, $y) < 0 }
+
+            $!value-comparison = -> Mu $x, Mu $y --> Order:D { &source($x, $y) <=> 0 }
+
+        }
+
+        Nil
     }
 
     method !has-priority(Mu $a, Mu $b --> Bool:D) {
-        my $result = $!comparator($a, $b);
-
-        return $result if $result ~~ Bool;
-        return $result === Less if $result ~~ Order;
-        $result < 0
+        self!normalize-comparator($a, $b);
+        $!priority-test($a, $b)
     }
 
     method !compare-values(Mu $a, Mu $b --> Order:D) {
-        my $forward = $!comparator($a, $b);
-
-        if $forward ~~ Bool {
-            my $backward = $!comparator($b, $a);
-            die 'Comparator must consistently return Bool values.' unless $backward ~~ Bool;
-
-            # Both true accommodates non-strict comparators such as >=;
-            # both false accommodates strict comparators such as >.
-            return Same if $forward == $backward;
-            return $forward ?? Less !! More;
-        }
-
-        return $forward if $forward ~~ Order;
-        $forward <=> 0
+        self!normalize-comparator($a, $b);
+        $!value-comparison($a, $b)
     }
 
     method !make-node(Mu $value, HeapNode $left, HeapNode $right --> HeapNode:D) {
@@ -252,8 +299,15 @@ class LeftistHeap {
             ?? %copies{$!root.WHICH}
             !! HeapNode;
 
+        my %normalized;
+        with $!priority-test {
+            %normalized<priority-test> = $!priority-test;
+            %normalized<value-comparison> = $!value-comparison;
+        }
+
         self.WHAT.bless(
             comparator => $!comparator,
+            |%normalized,
             :$root,
         )
     }
