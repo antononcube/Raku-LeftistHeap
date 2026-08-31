@@ -54,6 +54,9 @@ my $max-heap = LeftistHeap.new(
 );
 ```
 
+The comparator's result convention is normalized once during construction
+(or lazily on the first comparison for an initially empty heap).
+
 ----
 
 ## Methods

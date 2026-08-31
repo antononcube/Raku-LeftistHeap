@@ -66,6 +66,9 @@ my $max-heap = LeftistHeap.new(
 # LeftistHeap(size => 0, depth => 0, top => Nil)
 ```
 
+The comparator's result convention is normalized once during construction
+(or lazily on the first comparison for an initially empty heap).
+
 ----
 
 ## Methods
@@ -94,11 +97,11 @@ raku benchmarks/merge.raku 65536
 ```
 ```
 # elements: 32768
-# insert:   1.881 s
-# delete:   3.500 s
-# combined: 5.380 s
-# 1st heap creation time: 2.828085, elems: 65536
-# 2nd heap creation time: 1.905601, elems: 65536
-# merge: 0.000176 s
+# insert:   2.199 s
+# delete:   3.773 s
+# combined: 5.972 s
+# 1st heap creation time: 1.668155, elems: 65536
+# 2nd heap creation time: 1.674280, elems: 65536
+# merge: 0.000181 s
 # elements after merge: 131072
 ```
