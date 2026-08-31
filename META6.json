@@ -1,7 +1,7 @@
 {
     "name": "LeftistHeap",
     "description": "Package with Leftist Heap data structure implementation.",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "authors": [
         "Anton Antonov"
     ],
