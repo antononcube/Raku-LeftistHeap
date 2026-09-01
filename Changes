@@ -1,0 +1,10 @@
+Changes of the Raku package "LeftistHeap".
+
+0.0.3 2026-09-01
+    - Optimization: normalization of the comparator provides ≈ 2 times speeds up.
+
+0.0.2 2026-08-29
+    - Signature and method additions and extensions.
+
+0.0.1 2026-08-29
+    - First version.
